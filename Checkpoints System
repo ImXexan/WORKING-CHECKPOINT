@@ -1,0 +1,117 @@
+----- INSTRUCTIONS -----
+
+-- Create a folder in Workspace called "Checkpoints" (without the quotes)
+-- Move all of your checkpoints into that folder
+-- Change the name of all of your checkpoints to their stage number (change the name of the first checkpoint to '1', the second checkpoint to '2', and so on)
+-- If your first checkpoint is 0, change the "FIRST_CHECKPOINT" variable below to 0
+-- Make sure your checkpoints are normal parts and not SpawnLocations; if they are SpawnLocations, you either need to set their 'Enabled' property to false or replace them with regular parts
+-- If you spawn facing the wrong direction, try rotating the checkpoint
+
+-- IMPORTANT: If you have another data store in your game called "ObbyData", make sure to change the name of the data store below in this script
+
+----- Variables -----
+
+local Players = game:GetService("Players")
+local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
+
+local ObbyDataStore = DataStoreService:GetDataStore("ObbyData") -- Change if you have another data store
+
+local checkpoints = game.Workspace.Checkpoints -- Your checkpoints should be inside of this folder
+
+local FIRST_CHECKPOINT = 1 -- Change to 0 if your first checkpoint is 0
+
+----- Events -----
+
+Players.PlayerAdded:Connect(function(player)
+	local playerKey = "ID_" .. player.UserId
+	local retrievedData
+
+	local success, errorMessage = pcall(function()
+		retrievedData = ObbyDataStore:GetAsync(playerKey)
+	end)
+
+	if not success and not RunService:IsStudio() then
+		player:Kick("Error loading data, please rejoin.")
+		return
+	end
+
+	if not retrievedData then
+		retrievedData = {}
+	end
+
+	-- Create leaderstats
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Name = "leaderstats"
+	leaderstats.Parent = player
+
+	-- Create stage value
+	local stageValue = Instance.new("IntValue")
+	stageValue.Name = "Stage"
+	stageValue.Value = retrievedData.Stage or FIRST_CHECKPOINT
+	stageValue.Parent = leaderstats
+
+	player.CharacterAdded:Connect(function(character)
+		wait() -- Wait for the character to load
+
+		local checkpoint = checkpoints:FindFirstChild(tostring(stageValue.Value))
+
+		if checkpoint then
+			-- Set the player above the checkpoint
+			local spawnPosition = checkpoint.Position + Vector3.new(0, 3 + (checkpoint.Size.Y / 2), 0) -- Adjust position to spawn above the checkpoint
+
+			-- Spawn facing left (270 degrees on Y-axis) for checkpoints 1, 2, 3, 11, 13, 21, 22, 26, 36, 37, 38, 39, and 48
+			if stageValue.Value == 1 or stageValue.Value == 2 or stageValue.Value == 3 or stageValue.Value == 11 or
+				stageValue.Value == 13 or stageValue.Value == 21 or stageValue.Value == 22 or stageValue.Value == 26 or
+				stageValue.Value == 36 or stageValue.Value == 37 or stageValue.Value == 38 or stageValue.Value == 39 or
+				stageValue.Value == 48 then
+				character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(spawnPosition) * CFrame.Angles(0, math.rad(270), 0)
+				-- Spawn facing right (90 degrees on Y-axis) for checkpoints 7, 8, 15, 16, 17, 18, 30, 31, 32, 43, and 44
+			elseif stageValue.Value == 7 or stageValue.Value == 8 or stageValue.Value == 15 or stageValue.Value == 16 or
+				stageValue.Value == 17 or stageValue.Value == 18 or stageValue.Value == 30 or stageValue.Value == 31 or
+				stageValue.Value == 32 or stageValue.Value == 43 or stageValue.Value == 44 then
+				character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(spawnPosition) * CFrame.Angles(0, math.rad(90), 0)
+				-- Spawn facing backward (180 degrees on Y-axis) for checkpoints 9 and 10
+			elseif stageValue.Value == 9 or stageValue.Value == 10 then
+				character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(spawnPosition) * CFrame.Angles(0, math.rad(180), 0)
+				-- Spawn facing forward (default orientation) for checkpoints 4, 5, 6, 12, 14, 23, 24, 25, 33, 34, 35, 45, 46, and 47
+			elseif stageValue.Value == 4 or stageValue.Value == 5 or stageValue.Value == 6 or stageValue.Value == 12 or
+				stageValue.Value == 14 or stageValue.Value == 23 or stageValue.Value == 24 or stageValue.Value == 25 or
+				stageValue.Value == 33 or stageValue.Value == 34 or stageValue.Value == 35 or stageValue.Value == 45 or
+				stageValue.Value == 46 or stageValue.Value == 47 then
+				character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(spawnPosition)
+			end
+		end
+	end)
+end)
+
+for i, v in pairs(checkpoints:GetChildren()) do
+	v.Touched:Connect(function(hit)
+		local player = Players:GetPlayerFromCharacter(hit.Parent)
+
+		if not player or not player:FindFirstChild("leaderstats") then
+			return
+		end
+
+		if player.leaderstats.Stage.Value == tonumber(v.Name) - 1 then -- Prevents the player from skipping checkpoints and going backward
+			player.leaderstats.Stage.Value = tonumber(v.Name)
+		end
+	end)
+end
+
+game.Players.PlayerRemoving:Connect(function(player)
+	if not player:FindFirstChild("leaderstats") then
+		return
+	end
+
+	local playerKey = "ID_" .. player.UserId
+	local stage = player.leaderstats.Stage.Value
+
+	local success, errorMessage = pcall(function()
+		ObbyDataStore:SetAsync(playerKey, {Stage = stage})
+	end)
+
+	if not success and not RunService:IsStudio() then
+		warn("Error while saving player data")
+	end
+end)
