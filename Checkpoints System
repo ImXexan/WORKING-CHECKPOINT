@@ -72,7 +72,10 @@ Players.PlayerAdded:Connect(function(player)
 				stageValue.Value == 32 or stageValue.Value == 43 or stageValue.Value == 44 then
 				character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(spawnPosition) * CFrame.Angles(0, math.rad(90), 0)
 				-- Spawn facing backward (180 degrees on Y-axis) for checkpoints 9 and 10
-			elseif stageValue.Value == 9 or stageValue.Value == 10 then
+			elseif stageValue.Value == 9 or stageValue.Value == 10 or stageValue.Value == 19 or stageValue.Value == 20 or
+				stageValue.Value == 27 or stageValue.Value == 28 or stageValue.Value == 29 or stageValue.Value == 40 or 
+				stageValue.Value == 41 or stageValue.Value == 42 or stageValue.Value == 49 or stageValue.Value == 50 then
+			
 				character:WaitForChild("HumanoidRootPart").CFrame = CFrame.new(spawnPosition) * CFrame.Angles(0, math.rad(180), 0)
 				-- Spawn facing forward (default orientation) for checkpoints 4, 5, 6, 12, 14, 23, 24, 25, 33, 34, 35, 45, 46, and 47
 			elseif stageValue.Value == 4 or stageValue.Value == 5 or stageValue.Value == 6 or stageValue.Value == 12 or
@@ -115,3 +118,4 @@ game.Players.PlayerRemoving:Connect(function(player)
 		warn("Error while saving player data")
 	end
 end)
+
